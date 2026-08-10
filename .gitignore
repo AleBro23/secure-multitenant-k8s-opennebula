@@ -1,0 +1,17 @@
+# Kubeconfig (contiene certificati/token)
+kubeconfig*
+*.kubeconfig
+
+# Ambienti locali
+.env
+.DS_Store
+
+# k3d / kind locali
+k3d-*.yaml
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
