@@ -12,4 +12,11 @@
 | k8s-worker-1 | | 3584 MB | 2 |
 | k8s-worker-2 | | 3584 MB | 2 |
 
+## Cluster locale k3d (sviluppo senza VM)
+
+- Nome cluster: `fcc-dev`
+- **Importante:** su questo laptop (VPN aziendale attiva) `k3d cluster create` semplice fallisce
+  perché `host.docker.internal` si risolve tramite la VPN invece che verso Docker locale.
+  Va sempre creato con:
+
 ## Note
