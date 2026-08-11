@@ -1,0 +1,24 @@
+#mode: enfocrce -> if a pod vilolates the policy, it will be rejected
+#level: restricted -> the most restrictive level, only allow pods that meet the security standards
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-alpha
+  labels:
+    team: alpha
+    pod-security.kubernetes.io/enforce: restricted
+--- 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-beta
+  labels:
+    team: beta
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gatekeeper-system
+  labels:
+    team: platform
