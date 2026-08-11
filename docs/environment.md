@@ -17,7 +17,7 @@
 - Nome cluster: `fcc-dev`
 - **Importante:** su questo laptop (VPN aziendale attiva) `k3d cluster create` semplice fallisce
   perché `host.docker.internal` si risolve tramite la VPN invece che verso Docker locale.
-  Va sempre creato con:
+  Va sempre creato con: `k3d cluster create fcc-dev --api-port 127.0.0.1:6550`
 
 ## Note
 ## NetworkPolicy — comportamento kube-router (k3s/k3d)
