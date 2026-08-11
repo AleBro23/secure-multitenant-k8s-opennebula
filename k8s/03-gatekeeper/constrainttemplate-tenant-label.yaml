@@ -1,0 +1,28 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredtenantlabel
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredTenantLabel
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredtenantlabel
+
+        violation[{"msg": msg}] {
+          not input.review.object.metadata.labels.team
+          msg := "Pod is missing required label 'team'"
+        }
+
+        violation[{"msg": msg}] {
+          ns := input.review.object.metadata.namespace
+          expected := split(ns, "-")[1]
+          provided := input.review.object.metadata.labels.team
+          provided != expected
+          msg := sprintf("Label 'team=%v' does not match namespace '%v' (expected 'team=%v')", [provided, ns, expected])
+        }
+        
+#the split function is used to extract the team name from the namespace, assuming the namespace follows the format "team-<teamname>". 
