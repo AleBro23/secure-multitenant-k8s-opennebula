@@ -57,3 +57,18 @@ della regola, non produce automaticamente "falso".
 vero correttamente.
 
 **Lezione generale:** in Rego, preferire la negazione diretta sul percorso completo quando il campo potrebbe non esistere, evitare di assegnare prima a una variabile e poi negare quella.
+
+## Bug: collisione tra env var applicativa e variabile auto-iniettata da Kubernetes
+
+Riscontrato sul Deployment della webapp — da documentare (sezione problemi incontrati).
+
+**Sintomo:** la webapp falliva la connessione a Postgres con errore
+`invalid integer value "tcp://<ip>:5432" for connection option "port"`, nonostante rete e DNS
+verificati funzionanti (test con `nc -z postgres 5432` riuscito).
+
+**Causa:** Kubernetes inietta automaticamente variabili d'ambiente per ogni Service esistente nel namespace, con naming `<NOMESERVICE>_PORT`, `<NOMESERVICE>_SERVICE_HOST`, ecc. Il Service Postgres
+si chiama `postgres`, quindi Kubernetes genera da solo `POSTGRES_PORT=tcp://<clusterIP>:5432` — esattamente lo stesso nome che l'app usava per la propria variabile di configurazione della porta. La variabile auto-iniettata da Kubernetes ha sovrascritto il default applicativo.
+
+**Fix:** rimossa la dipendenza da una env var per il numero di porta (fisso, sempre 5432 per Postgres) — hardcoded direttamente nel codice invece di leggerlo da env.
+
+**Lezione generale:** evitare nomi di variabili d'ambiente applicative che iniziano col nome di un Service Kubernetes esistente nello stesso namespace — rischio concreto di collisione silenziosa.
