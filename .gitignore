@@ -3,7 +3,7 @@ kubeconfig*
 *.kubeconfig
 
 # Ambienti locali
-.env
+*.env
 .DS_Store
 
 # k3d / kind locali
