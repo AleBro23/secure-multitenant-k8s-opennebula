@@ -3,6 +3,8 @@ kind: Pod
 metadata:
   name: test-alpha
   namespace: team-alpha
+  labels:
+    team: alpha
 spec:
   securityContext:
     runAsNonRoot: true
@@ -17,3 +19,7 @@ spec:
         allowPrivilegeEscalation: false
         capabilities:
           drop: ["ALL"]
+      resources:
+        limits:
+          cpu: "100m"
+          memory: "64Mi"
