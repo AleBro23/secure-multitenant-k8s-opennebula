@@ -10,7 +10,7 @@ TEAM_NAME = os.environ.get("TEAM_NAME", "unknown")
 TEAM_COLOR = os.environ.get("TEAM_COLOR", "#4f46e5")
 
 DB_HOST = os.environ.get("POSTGRES_HOST", "postgres")
-DB_PORT = os.environ.get("POSTGRES_PORT", "5432")
+DB_PORT = "5432"
 DB_NAME = os.environ.get("POSTGRES_DB", "appdb")
 DB_USER = os.environ.get("POSTGRES_USER", "appuser")
 DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
@@ -41,10 +41,10 @@ def init_db(retries=10, delay=3):
             cur.close()
             conn.close()
             return
-        except OperationalError:
+        except OperationalError as e:
+            print(f"[init_db] Attempt {attempt+1}/{retries} failed: {e}", flush=True)
             time.sleep(delay)
     raise RuntimeError("Could not connect to database after retries")
-
 
 init_db()
 
