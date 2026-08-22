@@ -22,8 +22,9 @@ from the platform, not from the application itself.
 
 ## Architecture
 
-See `docs/architecture.png` for the full diagram (IaaS/PaaS boundary, VMs, tenant namespaces,
-and isolation mechanisms). Summary:
+![Architecture diagram — IaaS/PaaS boundary, VMs, tenant namespaces and isolation mechanisms](docs/architecture.png)
+
+Summary:
 
 ```
 Azure Lab VM (Ubuntu 24.04, 16 GB RAM, 4 vCPU)
