@@ -4,9 +4,9 @@ metadata:
   name: team-beta-quota
   namespace: team-beta
 spec:
-  hard: # specifies the maximum amount of compute resources that can be consumed by the team-beta namespace
-    requests.cpu: "2"
-    requests.memory: 2Gi
-    limits.cpu: "4"
-    limits.memory: 4Gi
+  hard: # specifies the maximum amount of compute resources that can be consumed by the team-alpha namespace
+    requests.cpu: "600m" #minimum amounto of CPU
+    requests.memory: 1200Mi
+    limits.cpu: "900m" #maximum amount of CPU, less then 1 beacause some resources are for the system pod
+    limits.memory: 2000Mi
     pods: "10"
