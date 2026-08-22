@@ -72,3 +72,37 @@ si chiama `postgres`, quindi Kubernetes genera da solo `POSTGRES_PORT=tcp://<clu
 **Fix:** rimossa la dipendenza da una env var per il numero di porta (fisso, sempre 5432 per Postgres) — hardcoded direttamente nel codice invece di leggerlo da env.
 
 **Lezione generale:** evitare nomi di variabili d'ambiente applicative che iniziano col nome di un Service Kubernetes esistente nello stesso namespace — rischio concreto di collisione silenziosa.
+
+## ResourceQuota / LimitRange — noisy-neighbor mitigation
+
+**Issue addressed:** proposal feedback noted that Gatekeeper's per-pod resource limit
+constraint does not prevent a tenant from exhausting node capacity via many small pods
+(e.g. 1000 pods each within the per-pod limit). Fixed by adding namespace-level
+`ResourceQuota` (hard caps on total requests.cpu/memory, limits.cpu/memory, and pod count)
+and `LimitRange` (default + min/max per container) to `team-alpha` and `team-beta`.
+
+**Admission chain discovery:** when testing enforcement, a single test pod triggered
+rejections from *three different* admission layers before ever reaching ResourceQuota,
+revealing the actual evaluation order in this cluster:
+
+1. **Pod Security Standards** (`restricted`) — rejects missing `securityContext` fields
+   (`runAsNonRoot`, `seccompProfile`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`)
+2. **Gatekeeper** (`require-tenant-label` constraint) — rejects pods missing the `team` label
+3. **LimitRange** — rejects requests without matching limits, or outside min/max bounds
+4. **ResourceQuota** — only evaluated once the pod passes all of the above; rejects if the
+   namespace total would be exceeded
+
+Practical implication: a valid test pod must satisfy PSS + carry the correct `team` label
++ respect LimitRange bounds *before* it can be used to test ResourceQuota at all. Test
+manifests in `k8s/manual-tests/` are built to satisfy 1–3 so they isolate ResourceQuota
+behaviour specifically.
+
+**Validation performed (local k3d, `team-alpha`):**
+- Two pods requesting `1 CPU / 1Gi` each: first admitted (total 1.2/2 CPU used), second
+  rejected — `exceeded quota: team-alpha-quota, requested: requests.cpu=1..., limited: requests.cpu=2`
+- 12 concurrent pod creations at `50m CPU / 64Mi` each against `pods: 10` hard limit:
+  admitted up to the cap, then rejected from the 11th onward —
+  `exceeded quota: team-alpha-quota, requested: pods=1, used: pods=10, limited: pods=10`
+
+Confirms noisy-neighbor threat is now mitigated at the namespace level, independent of
+per-pod Gatekeeper limits.

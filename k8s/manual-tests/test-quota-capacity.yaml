@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-quota-cap
+  namespace: team-alpha
+  labels:
+    team: alpha
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: test-quota-cap
+      image: busybox
+      command: ["sleep", "3600"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "1"
+          memory: "1Gi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+#with 2 pods created, the total cpu and memory requested is 2 cpu and 2Gi memory, which is the max allowed in the namespace. This pod should be rejected by the quota controller

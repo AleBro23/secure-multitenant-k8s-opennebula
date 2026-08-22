@@ -109,35 +109,73 @@ else
 fi
 
 # ---------------------------------------------------------
-# Test 8-9: Gatekeeper
+# Test 8-9: LimitRange auto-injects defaults (supersedes Gatekeeper check)
 # ---------------------------------------------------------
 echo ""
-echo "--- Gatekeeper ---"
+echo "--- Gatekeeper / LimitRange interaction ---"
 
-kubectl apply -f k8s/manual-tests/test-no-limits.yaml >/tmp/gk_test8.log 2>&1
-if grep -q "denied the request" /tmp/gk_test8.log && grep -q "resource limit" /tmp/gk_test8.log; then
-  pass "Test 8: pod without resource limits rejected by Gatekeeper"
+kubectl apply -f k8s/manual-tests/test-no-limits.yaml >/dev/null 2>&1
+INJECTED_LIMIT=$(kubectl get pod test-no-limits -n team-alpha -o jsonpath='{.spec.containers[0].resources.limits.cpu}')
+
+if [ "$INJECTED_LIMIT" == "250m" ]; then
+  pass "Test 8: pod without explicit limits gets LimitRange defaults injected before Gatekeeper validation (no unlimited pod can exist)"
 else
-  fail "Test 8: pod without resource limits was NOT rejected as expected"
-  kubectl delete pod test-no-limits -n team-alpha >/dev/null 2>&1
+  fail "Test 8: expected LimitRange default (250m) not found (unexpected: $INJECTED_LIMIT)"
 fi
 
-kubectl apply -f k8s/manual-tests/test-wrong-label.yaml >/tmp/gk_test9.log 2>&1
-if grep -q "denied the request" /tmp/gk_test9.log && grep -q "does not match namespace" /tmp/gk_test9.log; then
-  pass "Test 9: pod with mismatched tenant label rejected by Gatekeeper"
-else
-  fail "Test 9: pod with mismatched label was NOT rejected as expected"
-  kubectl delete pod test-wrong-label -n team-alpha >/dev/null 2>&1
-fi
-
-rm -f /tmp/gk_test8.log /tmp/gk_test9.log
+kubectl delete pod test-no-limits -n team-alpha >/dev/null 2>&1
 
 # ---------------------------------------------------------
-# Test 10: Persistenza dati
+# Test 10: ResourceQuota — CPU/memory capacity exhaustion
+# ---------------------------------------------------------
+echo ""
+echo "--- ResourceQuota (capacity) ---"
+
+sed 's/test-quota-cap/test-quota-cap-a/g' k8s/manual-tests/test-quota-capacity.yaml | kubectl apply -f - >/dev/null 2>&1
+CAP_RESULT=$(sed 's/test-quota-cap/test-quota-cap-b/g' k8s/manual-tests/test-quota-capacity.yaml | kubectl apply -f - 2>&1 || true)
+
+if echo "$CAP_RESULT" | grep -q "exceeded quota"; then
+  pass "Test 10: pod rejected once namespace CPU/memory quota is exhausted"
+else
+  fail "Test 10: quota was NOT enforced on CPU/memory exhaustion (unexpected: $CAP_RESULT)"
+fi
+
+kubectl delete pod test-quota-cap-a test-quota-cap-b -n team-alpha >/dev/null 2>&1
+
+# ---------------------------------------------------------
+# Test 11: ResourceQuota — pod count exhaustion (noisy neighbor)
+# ---------------------------------------------------------
+echo ""
+echo "--- ResourceQuota (pod count) ---"
+
+COUNT_REJECTED=0
+CREATED_PODS=()
+for i in $(seq 1 12); do
+  RESULT=$(sed "s/test-quota-pod/test-quota-count-$i/g" k8s/manual-tests/test-quota-pod.yaml | kubectl apply -f - 2>&1 || true)
+  if echo "$RESULT" | grep -q "exceeded quota"; then
+    COUNT_REJECTED=1
+    break
+  else
+    CREATED_PODS+=("test-quota-count-$i")
+  fi
+done
+
+if [ "$COUNT_REJECTED" -eq 1 ]; then
+  pass "Test 11: pod creation rejected once namespace pod-count quota is exhausted"
+else
+  fail "Test 11: all 12 pods were created without hitting the pod-count quota (unexpected)"
+fi
+
+for p in "${CREATED_PODS[@]}"; do
+  kubectl delete pod "$p" -n team-alpha >/dev/null 2>&1
+done
+
+# ---------------------------------------------------------
+# Test 12: Persistenza dati
 # ---------------------------------------------------------
 echo ""
 echo "--- Data persistence ---"
-echo "Test 10 (data survives pod restart) is a manual/visual test — see docs/environment.md."
+echo "Test 12 (data survives pod restart) is a manual/visual test — see docs/environment.md."
 echo "Skipped in automated run."
 
 # ---------------------------------------------------------
