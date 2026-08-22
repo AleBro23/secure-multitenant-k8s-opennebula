@@ -106,3 +106,26 @@ behaviour specifically.
 
 Confirms noisy-neighbor threat is now mitigated at the namespace level, independent of
 per-pod Gatekeeper limits.
+
+
+## OpenNebula provisioning — VM (labJU7KS0)
+
+Provisioned independently on the DISI lab VM.
+
+- Host: 4 vCPU / 15.6 GB RAM (miniONE), datastore `default` (122.9G, qcow2)
+- Image: Ubuntu 22.04 cloud image (ubuntu22.tmpl), registered as image ID 1
+- VNet: `fcc-k3s-net`, bridge `minionebr` (shared with default miniONE vnet,
+  separate IP pool: .101-.120 vs default's .2-.100)
+- Security Group: `k3s-cluster-sg` (ID 100) — SSH/NodePort open externally;
+  API server (6443), VXLAN (8472/UDP), kubelet (10250) restricted to VNet range
+- VM Template: `k3s-node` — 1 vCPU / 2.5GB RAM / 10GB disk per node
+  (sized down from original 2 vCPU plan: host only has 4 physical cores total)
+- Contextualization: SSH_PUBLIC_KEY injection via CONTEXT, NETWORK=YES for
+  automatic IP config — verified working, passwordless SSH as `ubuntu` user
+
+3 VMs instantiated from template:
+- k8s-cp       172.16.100.101
+- k8s-worker-1 172.16.100.102
+- k8s-worker-2 172.16.100.103
+
+SSH: ssh -i ~/.ssh/fcc-k3s-cluster ubuntu@172.16.100.10{1,2,3}
