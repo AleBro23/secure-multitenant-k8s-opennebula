@@ -1,16 +1,30 @@
 # Ambiente di sviluppo
 
 ## Lab VM Azure
-- Owner:
-- Ore residue (controllare periodicamente):
+- Owner: Alessandro Brognara (istanza OpenNebula indipendente da quella di Lorenzo)
+- Ore residue (controllare periodicamente): [TODO] verificare dal portale Azure
+
+**Nota (richiesta esplicita del prof):** gli IP privati assegnati alle VM vanno annotati qui,
+servono costantemente per SSH/kubectl. Vedi tabella sotto.
 
 ## VM OpenNebula (Fase 1)
 
 | Nome | IP privato | RAM | vCPU |
 |---|---|---|---|
-| k8s-cp | | 3072 MB | 2 |
-| k8s-worker-1 | | 3584 MB | 2 |
-| k8s-worker-2 | | 3584 MB | 2 |
+| k8s-cp | 172.16.100.101 | 2560 MB | 1 |
+| k8s-worker-1 | 172.16.100.102 | 2560 MB | 1 |
+| k8s-worker-2 | 172.16.100.103 | 2560 MB | 1 |
+
+Valori RAM/vCPU ridimensionati rispetto al piano iniziale (3072/3584 MB, 2 vCPU): l'host della
+lab VM ha solo 4 vCPU fisiche totali, il piano originale avrebbe causato oversubscription
+significativa. Dettagli completi del provisioning in `docs/vm-setup-runbook.md`.
+
+**Attenzione:** questi IP sono validi solo per questa istanza OpenNebula specifica — se le VM
+vengono ricreate da zero (delete + nuova istanza dal template), OpenNebula potrebbe assegnarne
+di diversi dal pool (`172.16.100.101-120`). Verificare sempre con `onevm show <id>` prima di
+assumere che siano ancora questi.
+
+SSH: `ssh -i ~/.ssh/fcc-k3s-cluster ubuntu@172.16.100.10{1,2,3}`
 
 
 ## Note
