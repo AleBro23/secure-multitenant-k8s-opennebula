@@ -9,7 +9,12 @@ spec:
     - Egress
   egress:
     - to:
-        - namespaceSelector: {}
+        - namespaceSelector:
+            matchLabels: # AND filter
+              kubernetes.io/metadata.name: kube-system # communication only to pod in the kube-system namespace
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns # communication only to pod with label k8s-app=kube-dns
       ports: #communication with DNS server
         - protocol: UDP
           port: 53
