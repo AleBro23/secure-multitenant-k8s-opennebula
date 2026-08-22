@@ -129,3 +129,39 @@ Provisioned independently on the DISI lab VM.
 - k8s-worker-2 172.16.100.103
 
 SSH: ssh -i ~/.ssh/fcc-k3s-cluster ubuntu@172.16.100.10{1,2,3}
+
+## DNS resolution failure on Azure lab VM (multi-layer)
+
+Symptom: no outbound connectivity from provisioned k3s nodes (curl/nslookup
+failures), despite HTTPS working for direct downloads (wget) and correct
+NAT/FORWARD rules being in place.
+
+Root causes (three independent layers):
+1. miniONE's system dnsmasq (serving DNS on the OpenNebula bridge, 172.16.100.1)
+   has no working upstream configured — confirmed via `journalctl -u dnsmasq`:
+   "failed to access /run/dnsmasq/resolv.conf: No such file or directory" on
+   every boot. Pre-existing bug in the miniONE image, unrelated to this project's
+   configuration.
+2. The VNet's DNS setting (`fcc-k3s-net.tmpl`, DNS="172.16.100.1") is written by
+   OpenNebula contextualization directly into each VM's netplan config as a
+   static nameserver — so every VM inherits the broken DNS by default.
+3. Azure blocks outbound UDP/53 to arbitrary public DNS resolvers (8.8.8.8,
+   1.1.1.1 both timed out, confirmed from both the host and the VMs) — a
+   security default on Azure networks. The only reachable DNS is Azure's
+   internal metadata/DNS endpoint, 168.63.129.16.
+
+Fix: edited /etc/netplan/50-cloud-init.yaml on each of the 3 VMs, replacing
+the inherited nameserver with 168.63.129.16, then `netplan apply`.
+
+Also fixed: FORWARD chain policy DROP on the host blocked routed (non-bridged)
+traffic from the VNet to the internet — added explicit ACCEPT rules for
+minionebr<->eth0 traffic (see commands below). These iptables rules are
+NOT persistent across host reboots; must be reapplied if the Azure VM restarts.
+
+    sudo iptables -I FORWARD -i minionebr -o eth0 -s 172.16.100.0/24 -j ACCEPT
+    sudo iptables -I FORWARD -i eth0 -o minionebr -d 172.16.100.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+Additional finding: an unclean shutdown of the Azure host (rather than
+`onevm poweroff` on each guest first) causes libvirt to lose track of all
+running domains — OpenNebula correctly detects this and marks VMs as
+POWEROFF, recoverable via `onevm resume <id>` without data loss (tested).
