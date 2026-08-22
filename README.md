@@ -7,19 +7,23 @@ Alessandro Brognara (261216) · Lorenzo Bergami (266671)
 
 This project implements a secure multi-tenant Kubernetes platform deployed on top of an
 OpenNebula IaaS layer running on an Azure lab VM. Two simulated tenants (`team-alpha`,
-`team-beta`) share the same physical Kubernetes cluster while being isolated through four
+`team-beta`) share the same physical Kubernetes cluster while being isolated through five
 independent, layered security mechanisms:
 
 - **RBAC** — per-tenant ServiceAccount/Role/RoleBinding, scoping API access to each tenant's own namespace
-- **NetworkPolicy** — default-deny-all with explicit allow rules (DNS, tenant-internal traffic only)
+- **NetworkPolicy** — default-deny-all with explicit allow rules (DNS scoped to CoreDNS pods only, tenant-internal traffic only)
 - **Pod Security Standards** — `restricted` profile enforced at namespace level
 - **OPA/Gatekeeper** — custom admission policies (mandatory resource limits, tenant label matching)
+- **ResourceQuota / LimitRange** — namespace-level caps on total CPU/memory and pod count, closing the noisy-neighbor gap left open by Gatekeeper's per-pod-only enforcement
 
 Each tenant runs an identical demo web application (Flask + Postgres task board), deliberately
 kept as the *same* container image for both tenants — the isolation guarantee comes entirely
 from the platform, not from the application itself.
 
 ## Architecture
+
+See `docs/architecture.png` for the full diagram (IaaS/PaaS boundary, VMs, tenant namespaces,
+and isolation mechanisms). Summary:
 
 ```
 Azure Lab VM (Ubuntu 24.04, 16 GB RAM, 4 vCPU)
@@ -33,16 +37,19 @@ Azure Lab VM (Ubuntu 24.04, 16 GB RAM, 4 vCPU)
 │       └── k8s-worker-2 (3.5 GB RAM, 2 vCPU)
 │
 └── k3s runs on the 3 VMs — PaaS layer
-    ├── namespace team-alpha   (webapp + postgres + PVC, PSS restricted)
-    ├── namespace team-beta    (webapp + postgres + PVC, PSS restricted)
+    ├── namespace team-alpha   (webapp + postgres + PVC on local-path,
+    │                           PSS restricted, ResourceQuota + LimitRange)
+    ├── namespace team-beta    (webapp + postgres + PVC on local-path,
+    │                           PSS restricted, ResourceQuota + LimitRange)
     └── namespace gatekeeper-system (OPA Gatekeeper)
 ```
 
 **Local development note:** since VM access was granted partway through the project, most of
-the Kubernetes-layer work (namespaces, RBAC, NetworkPolicy, Gatekeeper, workloads) was developed
-and validated on a local [k3d](https://k3d.io/) single-node cluster before being deployed to the
-real 3-node cluster. k3d runs actual k3s in Docker, including the same kube-router-based
-NetworkPolicy controller used in production — see `docs/environment.md` for details.
+the Kubernetes-layer work (namespaces, RBAC, NetworkPolicy, Gatekeeper, ResourceQuota/LimitRange,
+workloads) was developed and validated on a local [k3d](https://k3d.io/) single-node cluster
+before being deployed to the real 3-node cluster. k3d runs actual k3s in Docker, including the
+same kube-router-based NetworkPolicy controller used in production — see `docs/environment.md`
+for details.
 
 ## Prerequisites
 
@@ -95,7 +102,8 @@ kubectl create secret generic postgres-credentials \
 
 ### 5. Applying the Manifests
 
-Manifests must be applied in the order given by the folder prefixes:
+Manifests must be applied in the order given by the folder prefixes. `00-namespaces/` includes
+the ResourceQuota and LimitRange for each tenant alongside the namespace definitions:
 
 ```bash
 kubectl apply -f k8s/00-namespaces/
@@ -104,6 +112,10 @@ kubectl apply -f k8s/02-networkpolicy/
 kubectl apply -f k8s/03-gatekeeper/
 kubectl apply -f k8s/04-workloads/
 ```
+
+If deploying to a cluster with different worker capacity than the local dev environment,
+recalibrate the CPU/memory values in `k8s/00-namespaces/resourcequota-*.yaml` and
+`limitrange-*.yaml` before applying — see the comment header in each file.
 
 ### 6. Access the Webapp
 
@@ -120,7 +132,8 @@ directly at `http://<worker-ip>:30081` without port-forwarding.
 ## Validation
 
 Run the automated validation suite, which covers RBAC isolation, NetworkPolicy enforcement,
-Pod Security Standards, and Gatekeeper admission policies (9 automated checks):
+Pod Security Standards, Gatekeeper admission policies, and ResourceQuota/LimitRange enforcement
+(11 automated checks):
 
 ```bash
 ./scripts/validate.sh
@@ -128,7 +141,8 @@ Pod Security Standards, and Gatekeeper admission policies (9 automated checks):
 
 See `docs/environment.md` for a detailed write-up of testing methodology and issues encountered
 during development (e.g. the kube-router REJECT-vs-timeout behavior, PSS securityContext
-requirements for Postgres).
+requirements for Postgres, the admission controller evaluation order — PSS → Gatekeeper →
+LimitRange → ResourceQuota — discovered while testing the noisy-neighbor fix).
 
 ## Cleanup
 
@@ -148,12 +162,13 @@ kubectl delete -f k8s/00-namespaces/
 
 ```
 .
-├── docs/                environment.md (setup notes, issues log), proposal, final report
+├── docs/                environment.md (setup notes, issues log), architecture.png,
+│                        proposal, final report
 ├── iaas/                OpenNebula templates and configuration
 ├── k8s/
-│   ├── 00-namespaces/   tenant + gatekeeper-system namespaces
+│   ├── 00-namespaces/   tenant + gatekeeper-system namespaces, ResourceQuota, LimitRange
 │   ├── 01-rbac/         per-tenant ServiceAccount/Role/RoleBinding
-│   ├── 02-networkpolicy/ default-deny, DNS, webapp-to-postgres rules
+│   ├── 02-networkpolicy/ default-deny, DNS (scoped to CoreDNS), webapp-to-postgres rules
 │   ├── 03-gatekeeper/   ConstraintTemplates + Constraints
 │   ├── 04-workloads/    postgres + webapp Deployments/Services/PVCs per tenant
 │   └── manual-tests/    ad-hoc pods used to validate policies during development
