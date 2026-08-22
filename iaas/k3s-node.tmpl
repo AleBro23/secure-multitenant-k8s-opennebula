@@ -1,0 +1,24 @@
+NAME = "k3s-node"
+
+CPU  = "1"
+VCPU = "1"
+MEMORY = "2560"
+
+DISK = [
+  IMAGE_ID = "1",
+  SIZE = "10240" ]
+
+NIC = [
+  NETWORK = "fcc-k3s-net",
+  SECURITY_GROUPS = "100" ]
+
+GRAPHICS = [
+  TYPE = "vnc",
+  LISTEN = "0.0.0.0" ]
+
+CONTEXT = [
+  NETWORK = "YES",
+  SSH_PUBLIC_KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJPW2Ej8q7VNS3YCr0mRv7pg+kz4HgzEgUbgvz26tfQr disi@labJU7KS0" ]
+
+OS = [
+  ARCH = "x86_64" ]

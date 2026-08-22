@@ -1,0 +1,33 @@
+NAME = "k3s-cluster-sg"
+DESCRIPTION = "SSH admin access, k3s API server, VXLAN overlay, kubelet API, NodePort range"
+
+RULE = [
+  PROTOCOL = "TCP",
+  RULE_TYPE = "inbound",
+  RANGE = "22" ]
+
+RULE = [
+  PROTOCOL = "TCP",
+  RULE_TYPE = "inbound",
+  RANGE = "6443",
+  IP = "172.16.100.101",
+  SIZE = "20" ]
+
+RULE = [
+  PROTOCOL = "UDP",
+  RULE_TYPE = "inbound",
+  RANGE = "8472",
+  IP = "172.16.100.101",
+  SIZE = "20" ]
+
+RULE = [
+  PROTOCOL = "TCP",
+  RULE_TYPE = "inbound",
+  RANGE = "10250",
+  IP = "172.16.100.101",
+  SIZE = "20" ]
+
+RULE = [
+  PROTOCOL = "TCP",
+  RULE_TYPE = "inbound",
+  RANGE = "30000:32767" ]
