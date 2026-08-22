@@ -165,3 +165,24 @@ Additional finding: an unclean shutdown of the Azure host (rather than
 `onevm poweroff` on each guest first) causes libvirt to lose track of all
 running domains — OpenNebula correctly detects this and marks VMs as
 POWEROFF, recoverable via `onevm resume <id>` without data loss (tested).
+
+## iptables-persistent restore incident
+
+`netfilter-persistent restart` initially restored a stale ruleset from March
+(before OpenNebula/libvirt were configured on this VM), because the package
+was already installed and `apt install` skipped the interactive save prompt.
+This wiped the FORWARD chain down to Docker-only rules, breaking network
+access to all 3 VMs entirely (SSH refused, not just DNS).
+
+Recovery: `systemctl restart libvirtd` (regenerates LIBVIRT_FW* chains),
+`onevm poweroff --hard` + `onevm resume` on each VM one at a time (regenerates
+the `opennebula` security-group chain), then re-added the two custom
+minionebr<->eth0 FORWARD rules. This time, `netfilter-persistent save` was
+run explicitly *before* trusting the persistence — verified by an actual
+`netfilter-persistent restart` afterward, confirming the FORWARD chain
+(all 8 rules) survives.
+
+Lesson: `apt install iptables-persistent` does not always prompt to save
+current rules if already installed — always run `netfilter-persistent save`
+explicitly and verify with a restart, don't assume the package's presence
+means the current state is captured.
