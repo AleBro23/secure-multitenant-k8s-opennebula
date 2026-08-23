@@ -1,6 +1,6 @@
 #!/bin/bash
 # Validation suite — Secure Multi-Tenant Kubernetes Platform
-# Fase 7: raccoglie tutti i test di sicurezza in un unico script ripetibile.
+# Raccoglie tutti i test di sicurezza in un unico script ripetibile.
 
 set -uo pipefail
 
@@ -177,6 +177,25 @@ echo ""
 echo "--- Data persistence ---"
 echo "Test 12 (data survives pod restart) is a manual/visual test — see docs/environment.md."
 echo "Skipped in automated run."
+
+# ---------------------------------------------------------
+# Test 13: external NodePort access is blocked by default-deny ingress
+# ---------------------------------------------------------
+echo ""
+echo "--- External NodePort access (should be blocked) ---"
+
+# NOTE: run this script from a host that can reach the OpenNebula VNet directly
+# (e.g. the DISI lab VM itself), NOT from inside a pod — otherwise it doesn't
+# test the intended path. WORKER_IP is the real worker IP, see docs/environment.md.
+WORKER_IP="${WORKER_IP:-172.16.100.102}"
+
+NODEPORT_RESULT=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "http://${WORKER_IP}:30081/" 2>&1 || echo "000")
+
+if [ "$NODEPORT_RESULT" == "000" ]; then
+  pass "Test 13: direct NodePort access to webapp is blocked by default-deny-all ingress"
+else
+  fail "Test 13: NodePort access unexpectedly succeeded (HTTP $NODEPORT_RESULT) — ingress policy gap"
+fi
 
 # ---------------------------------------------------------
 # Summary

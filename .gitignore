@@ -15,3 +15,6 @@ k3d-*.yaml
 
 # OS
 Thumbs.db
+
+#Template
+iaas/k3s-node.tmpl

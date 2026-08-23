@@ -77,6 +77,12 @@ See `docs/environment.md` for the networking issues encountered and resolved alo
 
 ### 1. IaaS Provisioning
 
+Generate the real OpenNebula templates from the `.example` files (injects your own SSH public key):
+
+​```bash
+./scripts/gen-iaas-templates.sh
+​```
+
 OpenNebula template files (image, VNet, security group, VM template) are in `iaas/`:
 
 ```bash
@@ -233,6 +239,8 @@ the comment header in each file.
 On the real cluster, use `scripts/port-forward.sh` (starts both port-forwards in the background,
 safe to re-run) and `scripts/stop-port-forward.sh` to stop them:
 
+**Note:** direct access via the NodePort (30081/30082) is intentionally blocked by the default-deny-all NetworkPolicy — port-forward is the only supported access path. See `docs/environment.md` for details.
+
 ```bash
 ./scripts/port-forward.sh
 ```
@@ -254,7 +262,7 @@ kubectl port-forward -n team-beta svc/webapp 5001:5000
 
 Run the automated validation suite, which covers RBAC isolation, NetworkPolicy enforcement,
 Pod Security Standards, Gatekeeper admission policies, and ResourceQuota/LimitRange enforcement
-(12 automated checks):
+(13 automated checks):
 
 ```bash
 ./scripts/validate.sh

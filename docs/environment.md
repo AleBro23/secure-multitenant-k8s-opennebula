@@ -144,6 +144,13 @@ Provisioned independently on the DISI lab VM.
 
 SSH: ssh -i ~/.ssh/fcc-k3s-cluster ubuntu@172.16.100.10{1,2,3}
 
+**External access to webapp is intentionally blocked outside port-forward.**
+The `default-deny-all` NetworkPolicy denies ingress to all pods in team-alpha/team-beta,
+including traffic arriving via the webapp Service's NodePort (30081/30082) — even though
+the OpenNebula security group opens the NodePort range externally. `kubectl port-forward`
+works because it tunnels through the API server/kubelet, not the pod network, so it is not
+subject to NetworkPolicy. Verified in `scripts/validate.sh` Test 13.
+
 ## DNS resolution failure on Azure lab VM (multi-layer)
 
 Symptom: no outbound connectivity from provisioned k3s nodes (curl/nslookup
