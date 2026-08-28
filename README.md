@@ -17,7 +17,7 @@ independent, layered security mechanisms:
 - **ResourceQuota / LimitRange** — namespace-level caps on total CPU/memory and pod count, closing the noisy-neighbor gap left open by Gatekeeper's per-pod-only enforcement
 
 Each tenant runs an identical demo web application (Flask + Postgres task board), deliberately
-kept as the *same* container image for both tenants — the isolation guarantee comes entirely
+kept as the same container image for both tenants: the isolation guarantee comes entirely
 from the platform, not from the application itself.
 
 ## Architecture
@@ -74,7 +74,7 @@ and instantiation of the 3 VMs, all via CLI. The four OpenNebula template files 
 
 ### 1. IaaS Provisioning
 
-Generate the real OpenNebula templates from the `.example` files (injects your own SSH public key):
+Generate the OpenNebula templates from the `.example` files (injects your own SSH public key):
 
 ​```bash
 ./scripts/gen-iaas-templates.sh
@@ -95,7 +95,7 @@ onetemplate instantiate 1 --name k8s-worker-2
 ```
 
 Each VM boots with network config and an SSH public key already injected via contextualization
-(see the `CONTEXT` section in `iaas/k3s-node.tmpl`) — no manual per-VM setup or console login
+(see the `CONTEXT` section in `iaas/k3s-node.tmpl`): no manual per-VM setup or console login
 required. IDs (`-d 1` for the datastore, `1` for the template) match this project's OpenNebula
 instance and may differ on a fresh install — check with `onedatastore list` / `onetemplate list`.
 
@@ -146,7 +146,7 @@ control-plane via the token generated above:
 curl -sfL https://get.k3s.io | K3S_URL=https://172.16.100.101:6443 K3S_TOKEN=<token> sh -
 ```
 
-There is no auto-discovery — a node's role (server vs. agent) is decided purely by which install
+There is no auto-discovery: a node's role (server vs. agent) is decided purely by which install
 command you run and, for workers, by the `K3S_URL`/`K3S_TOKEN` pair pointing them at the
 control-plane. Verify from the control-plane:
 
@@ -193,9 +193,9 @@ docker save team-webapp:local | ssh <worker-host> sudo k3s ctr images import -
 ### 6. Create the Postgres Secrets
 
 Credentials are kept out of version control (see `k8s/04-workloads/*.env.example`).
-Copy each example, fill in real values, then generate the Secret imperatively — ideally using a
+Copy each example, fill in real values, then generate the Secret imperatively, ideally using a
 kubeconfig scoped to the tenant's own ServiceAccount rather than a cluster-admin one, to keep the
-operation consistent with each tenant's actual RBAC permissions:
+operation consistent with each tenant's RBAC permissions:
 
 ```bash
 cp k8s/04-workloads/postgres-alpha.env.example k8s/04-workloads/postgres-alpha.env
@@ -227,9 +227,8 @@ Gatekeeper from scratch); `scripts/init-deploy-vm.sh` automates it for the real 
 k3s is already bootstrapped and `KUBECONFIG` is already pointed at it.
 
 `ResourceQuota`/`LimitRange` values in `k8s/00-namespaces/resourcequota-*.yaml` and
-`limitrange-*.yaml` are calibrated for this project's real worker capacity (1 vCPU / 2.5 GB each,
-control-plane excluded) — recalibrate if deploying to a cluster with different worker specs, see
-the comment header in each file.
+`limitrange-*.yaml` are calibrated for this project's worker capacity (1 vCPU / 2.5 GB each,
+control-plane excluded). Recalibrate if deploying to a cluster with different worker specs.
 
 ### 8. Access the Webapp
 
