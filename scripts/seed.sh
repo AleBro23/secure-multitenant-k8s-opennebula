@@ -1,7 +1,4 @@
-#!/bin/bash
-# Seed data — populates team-alpha and team-beta task boards with sample data.
-# Run manually whenever needed (demo, after a fresh cluster, etc.).
-# Requires: postgres already Running in both namespaces.
+# Populates team-alpha and team-beta task boards with sample data.
 
 set -euo pipefail
 

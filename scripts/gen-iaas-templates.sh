@@ -1,4 +1,3 @@
-#!/bin/bash
 # Generates real IaaS templates from .example files, injecting the local SSH public key.
 set -euo pipefail
 

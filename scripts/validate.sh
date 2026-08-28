@@ -1,7 +1,3 @@
-#!/bin/bash
-# Validation suite — Secure Multi-Tenant Kubernetes Platform
-# Raccoglie tutti i test di sicurezza in un unico script ripetibile.
-
 set -uo pipefail
 
 PASS=0

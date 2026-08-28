@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# init.sh — bootstrap or resume the local k3d dev environment for the project.
+# Bootstrap or resume the local k3d dev environment for the project.
 # Safe to run every time you reopen the project.
 
 CLUSTER_NAME="fcc-dev"

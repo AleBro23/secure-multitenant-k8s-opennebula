@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# stop-port-forward.sh — stops the port-forward processes started by
-# port-forward.sh, cleaning up PID files.
-
 PIDFILE_ALPHA=/tmp/pf-alpha.pid
 PIDFILE_BETA=/tmp/pf-beta.pid
 

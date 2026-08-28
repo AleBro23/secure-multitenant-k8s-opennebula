@@ -1,9 +1,6 @@
-#!/usr/bin/env bash
 set -uo pipefail
 
-# port-forward.sh — exposes both tenant webapps on the Azure lab VM host,
-# so they can be reached from a laptop via SSH tunnel.
-# Safe to re-run: kills any previous port-forward before starting new ones.
+# Exposes both tenant webapps on the Azure lab VM host, so they can be reached from a laptop via SSH tunnel.
 
 PIDFILE_ALPHA=/tmp/pf-alpha.pid
 PIDFILE_BETA=/tmp/pf-beta.pid
