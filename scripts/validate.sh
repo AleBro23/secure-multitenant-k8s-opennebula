@@ -166,16 +166,10 @@ for p in "${CREATED_PODS[@]}"; do
   kubectl delete pod "$p" -n team-alpha >/dev/null 2>&1
 done
 
-# ---------------------------------------------------------
-# Test 12: Persistenza dati
-# ---------------------------------------------------------
-echo ""
-echo "--- Data persistence ---"
-echo "Test 12 (data survives pod restart) is a manual/visual test — see docs/environment.md."
-echo "Skipped in automated run."
+
 
 # ---------------------------------------------------------
-# Test 13: external NodePort access is blocked by default-deny ingress
+# Test 12: external NodePort access is blocked by default-deny ingress
 # ---------------------------------------------------------
 echo ""
 echo "--- External NodePort access (should be blocked) ---"
@@ -186,9 +180,9 @@ HTTP_CODE=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "http://${WORKER_IP}:300
 CURL_EXIT=$?
 
 if [ "$CURL_EXIT" -ne 0 ] || [ "$HTTP_CODE" == "000" ]; then
-  pass "Test 13: direct NodePort access to webapp is blocked by default-deny-all ingress"
+  pass "Test 12: direct NodePort access to webapp is blocked by default-deny-all ingress"
 else
-  fail "Test 13: NodePort access unexpectedly succeeded (HTTP $HTTP_CODE) — ingress policy gap"
+  fail "Test 12: NodePort access unexpectedly succeeded (HTTP $HTTP_CODE) — ingress policy gap"
 fi
 
 # ---------------------------------------------------------

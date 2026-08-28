@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # Bootstrap or resume the local k3d dev environment for the project.
-# Safe to run every time you reopen the project.
 
 CLUSTER_NAME="fcc-dev"
 API_PORT="127.0.0.1:6550"   # workaround for VPN interference on default port
