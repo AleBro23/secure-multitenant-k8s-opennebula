@@ -50,21 +50,18 @@ so tenant pods are only ever scheduled on the two worker nodes.
 
 > The IPs shown (172.16.100.101-103) are private, valid only within this project's OpenNebula
 > VNet — not reachable from outside, and may change if the VMs are ever reprovisioned from
-> scratch. See `docs/environment.md` for the up-to-date table.
+> scratch.
 
 **Local development note:** most of the Kubernetes-layer work (namespaces, RBAC, NetworkPolicy,
 Gatekeeper, ResourceQuota/LimitRange, workloads) was first developed and validated on a local
 [k3d](https://k3d.io/) single-node cluster, then deployed and re-verified on the real 3-node
 cluster provisioned on the DISI lab VM. k3d runs actual k3s in Docker, including the same
-kube-router-based NetworkPolicy controller used in production — see `docs/environment.md` for
-details.
+kube-router-based NetworkPolicy controller used in production.
 
 **IaaS provisioning:** completed independently on a dedicated OpenNebula (MiniONE) instance on
 the lab VM — image registration, VNet, security group, VM template with SSH-key contextualization,
 and instantiation of the 3 VMs, all via CLI. The four OpenNebula template files used
 (`ubuntu22.tmpl`, `fcc-k3s-net.tmpl`, `k3s-cluster-sg.tmpl`, `k3s-node.tmpl`) are in `iaas/`.
-See `docs/environment.md` for the networking issues encountered and resolved along the way
-(host-level routing, DNS resolution on Azure, iptables persistence).
 
 ## Prerequisites
 
@@ -239,7 +236,7 @@ the comment header in each file.
 On the real cluster, use `scripts/port-forward.sh` (starts both port-forwards in the background,
 safe to re-run) and `scripts/stop-port-forward.sh` to stop them:
 
-**Note:** direct access via the NodePort (30081/30082) is intentionally blocked by the default-deny-all NetworkPolicy — port-forward is the only supported access path. See `docs/environment.md` for details.
+**Note:** direct access via the NodePort (30081/30082) is intentionally blocked by the default-deny-all NetworkPolicy — port-forward is the only supported access path.
 
 ```bash
 ./scripts/port-forward.sh
@@ -272,11 +269,6 @@ Among these, Tests 1-3 demonstrate a scoped ServiceAccount (`alpha-dev`) creatin
 successfully in its own namespace and being rejected with a real `Forbidden` when targeting the
 other tenant's namespace.
 
-See `docs/environment.md` for a detailed write-up of testing methodology and issues encountered
-during development (e.g. the kube-router REJECT-vs-timeout behavior, PSS securityContext
-requirements for Postgres, the admission controller evaluation order — PSS → Gatekeeper →
-LimitRange → ResourceQuota — discovered while testing the noisy-neighbor fix, and the
-Azure/OpenNebula networking issues encountered while bootstrapping the real cluster).
 
 ## Cleanup
 
@@ -296,7 +288,7 @@ kubectl delete -f k8s/00-namespaces/
 
 ```
 .
-├── docs/                environment.md (setup notes, issues log), architecture.png, proposal.pdf
+├── docs/                architecture.png
 ├── iaas/                OpenNebula templates: ubuntu22.tmpl (base image), fcc-k3s-net.tmpl
 │                        (VNet), k3s-cluster-sg.tmpl (security group), k3s-node.tmpl (VM
 │                        template, instantiated 3x for k8s-cp/k8s-worker-1/k8s-worker-2)
