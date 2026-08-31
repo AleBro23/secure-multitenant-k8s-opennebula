@@ -21,9 +21,9 @@ spec:
           drop: ["ALL"]
       resources:
         requests:
-          cpu: "20m"
+          cpu: "50m"
           memory: "64Mi"
         limits:
-          cpu: "20m"
+          cpu: "50m"
           memory: "64Mi"
 #used in a for loop for testing the max number of pods that can be created in a namespace
