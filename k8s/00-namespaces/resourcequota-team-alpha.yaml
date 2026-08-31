@@ -5,8 +5,8 @@ metadata:
   namespace: team-alpha
 spec:
   hard: # specifies the maximum amount of compute resources that can be consumed by the team-alpha namespace
-    requests.cpu: "600m" #minimum amounto of CPU
-    requests.memory: 1200Mi
-    limits.cpu: "1200m" #maximum amount of CPU
-    limits.memory: 2000Mi
+    requests.cpu: "400m" #minimum amounto of CPU
+    requests.memory: 800Mi
+    limits.cpu: "700m" #maximum amount of CPU
+    limits.memory: 1400Mi
     pods: "10"

@@ -21,9 +21,9 @@ spec:
           drop: ["ALL"]
       resources:
         requests:
-          cpu: "400m"
-          memory: "700Mi"
+          cpu: "250m"
+          memory: "500Mi"
         limits:
-          cpu: "450m"
-          memory: "750Mi"
+          cpu: "300m"
+          memory: "600Mi"
 #with 2 pods created, the total cpu and memory requested is 2 cpu and 2Gi memory, which is the max allowed in the namespace. This pod should be rejected by the quota controller
